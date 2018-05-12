@@ -14,6 +14,10 @@ import (
 
 // LatestVersions returns a sorted slice with the highest version as its first element and the highest version of the smaller minor versions in a descending order
 func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*semver.Version {
+	if releases == nil || minVersion == nil {
+		panic("invalid function parameters")
+	}
+
 	var versionSlice []*semver.Version
 
 	var compareSlice [][]string
@@ -22,11 +26,23 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 
 	for _, versions := range releases {
 		if versions.Major < minVersion.Major {
-			releases = releases[1:]
+			if len(releases) != 1 {
+				releases = releases[1:]
+			} else {
+				return versionSlice
+			}
 		} else if versions.Major == minVersion.Major && versions.Minor < minVersion.Minor {
-			releases = releases[1:]
+			if len(releases) != 1 {
+				releases = releases[1:]
+			} else {
+				return versionSlice
+			}
 		} else if versions.Major == minVersion.Major && versions.Minor == minVersion.Minor && minVersion.Patch > versions.Patch {
-			releases = releases[1:]
+			if len(releases) != 1 {
+				releases = releases[1:]
+			} else {
+				return versionSlice
+			}
 		} else {
 			compareSlice = append(compareSlice, strings.Split(versions.String(), "."))
 		}
@@ -55,7 +71,6 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 			versionSlice = append(versionSlice, prevVer)
 		}
 	}
-
 	for left, right := 0, len(versionSlice)-1; left < right; left, right = left+1, right-1 {
 		versionSlice[left], versionSlice[right] = versionSlice[right], versionSlice[left]
 	}

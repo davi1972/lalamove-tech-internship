@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 
@@ -16,7 +17,7 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 	var versionSlice []*semver.Version
 
 	var compareSlice [][]string
-	// Remove versions that are lower than min, sort
+	// Remove versions that are lower than min and sort
 	semver.Sort(releases)
 
 	for _, versions := range releases {
@@ -26,8 +27,6 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 			compareSlice = append(compareSlice, strings.Split(versions.String(), "."))
 		}
 	}
-	fmt.Println(releases)
-	fmt.Println(compareSlice)
 	// Create a dummy variable for sorting
 	point := compareSlice[0]
 	prevVer := releases[0]
@@ -52,11 +51,15 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 			versionSlice = append(versionSlice, prevVer)
 		}
 	}
+	for i := len(versionSlice)/2 - 1; i >= 0; i-- {
+		opp := len(versionSlice) - 1 - i
+		versionSlice[i], versionSlice[opp] = versionSlice[opp], versionSlice[i]
+	}
 	// This is just an example structure of the code, if you implement this interface, the test cases in main_test.go are very easy to run
 	return versionSlice
 }
 
-func parseFile(args string) map[string]*semver.Version {
+func parseFile(args string) [][]string {
 	data, err := ioutil.ReadFile(args)
 	if err != nil {
 		panic(err)
@@ -64,11 +67,11 @@ func parseFile(args string) map[string]*semver.Version {
 	dataString := string(data)
 	dataStringArr := strings.Split(dataString, "\n")
 
-	var toCheck = make(map[string]*semver.Version)
+	var toCheck [][]string
 	i := dataStringArr[1:]
 	for _, value := range i {
 		arr := strings.Split(value, ",")
-		toCheck[arr[0]] = semver.New(arr[1])
+		toCheck = append(toCheck, arr)
 	}
 	return toCheck
 }
@@ -78,28 +81,31 @@ func parseFile(args string) map[string]*semver.Version {
 // Please use the format defined by the fmt.Printf line at the bottom, as we will define a passing coding challenge as one that outputs
 // the correct information, including this line
 func main() {
-	// cmd := os.Args
-	// datas := parseFile(cmd[1])
-	// fmt.Println(datas)
+	cmd := os.Args
+	commands := parseFile(cmd[1])
+	fmt.Println(commands)
 
 	// Github
 	client := github.NewClient(nil)
 	ctx := context.Background()
 	opt := &github.ListOptions{PerPage: 10}
-	releases, _, err := client.Repositories.ListReleases(ctx, "kubernetes", "kubernetes", opt)
-	if err != nil {
-		panic(err) // is this really a good way?
-	}
-	minVersion := semver.New("1.8.0")
-	allReleases := make([]*semver.Version, len(releases))
-	for i, release := range releases {
-		versionString := *release.TagName
-		if versionString[0] == 'v' {
-			versionString = versionString[1:]
+	for _, command := range commands {
+		repo := strings.Split(command[0], "/")
+		releases, _, err := client.Repositories.ListReleases(ctx, repo[0], repo[1], opt)
+		if err != nil {
+			panic(err) // is this really a good way?
 		}
-		allReleases[i] = semver.New(versionString)
-	}
-	versionSlice := LatestVersions(allReleases, minVersion)
+		minVersion := semver.New(command[1])
+		allReleases := make([]*semver.Version, len(releases))
+		for i, release := range releases {
+			versionString := *release.TagName
+			if versionString[0] == 'v' {
+				versionString = versionString[1:]
+			}
+			allReleases[i] = semver.New(versionString)
+		}
+		versionSlice := LatestVersions(allReleases, minVersion)
 
-	fmt.Printf("latest versions of kubernetes/kubernetes: %s", versionSlice)
+		fmt.Printf("latest versions of %s/%s: %s \n", repo[0], repo[1], versionSlice)
+	}
 }

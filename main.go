@@ -21,7 +21,11 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 	semver.Sort(releases)
 
 	for _, versions := range releases {
-		if versions.Major < minVersion.Major || versions.Minor < minVersion.Minor {
+		if versions.Major < minVersion.Major {
+			releases = releases[1:]
+		} else if versions.Major == minVersion.Major && versions.Minor < minVersion.Minor {
+			releases = releases[1:]
+		} else if versions.Major == minVersion.Major && versions.Minor == minVersion.Minor && minVersion.Patch > versions.Patch {
 			releases = releases[1:]
 		} else {
 			compareSlice = append(compareSlice, strings.Split(versions.String(), "."))
@@ -51,10 +55,11 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 			versionSlice = append(versionSlice, prevVer)
 		}
 	}
-	for i := len(versionSlice)/2 - 1; i >= 0; i-- {
-		opp := len(versionSlice) - 1 - i
-		versionSlice[i], versionSlice[opp] = versionSlice[opp], versionSlice[i]
+
+	for left, right := 0, len(versionSlice)-1; left < right; left, right = left+1, right-1 {
+		versionSlice[left], versionSlice[right] = versionSlice[right], versionSlice[left]
 	}
+
 	// This is just an example structure of the code, if you implement this interface, the test cases in main_test.go are very easy to run
 	return versionSlice
 }
@@ -83,7 +88,6 @@ func parseFile(args string) [][]string {
 func main() {
 	cmd := os.Args
 	commands := parseFile(cmd[1])
-	fmt.Println(commands)
 
 	// Github
 	client := github.NewClient(nil)
@@ -106,6 +110,6 @@ func main() {
 		}
 		versionSlice := LatestVersions(allReleases, minVersion)
 
-		fmt.Printf("latest versions of %s/%s: %s \n", repo[0], repo[1], versionSlice)
+		fmt.Printf("latest versions of %s/%s: %s\n", repo[0], repo[1], versionSlice)
 	}
 }

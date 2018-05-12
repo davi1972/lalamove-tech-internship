@@ -48,6 +48,12 @@ func TestLatestVersions(t *testing.T) {
 			expectedResult: []string{"2.2.1"},
 			minVersion:     semver.New("2.2.1"),
 		},
+		// Test case of string, not integer value
+		{
+			versionSlice:   []string{"2.2.1", "2.2.0", "3.0.1", "3.0.3", "3.1.0", "3.2.0-alpha.1", "3.2.0-alpha.2"},
+			expectedResult: []string{"3.2.0-alpha.2", "3.1.0", "3.0.3", "2.2.1"},
+			minVersion:     semver.New("2.2.1"),
+		},
 		// Implement more relevant test cases here, if you can think of any
 	}
 

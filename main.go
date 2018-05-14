@@ -14,10 +14,12 @@ import (
 
 // LatestVersions returns a sorted slice with the highest version as its first element and the highest version of the smaller minor versions in a descending order
 func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*semver.Version {
-	if releases == nil || minVersion == nil {
-		fmt.Println("invalid function parameters")
+	if releases == nil {
+		fmt.Println("No Releases found")
 	}
-
+	if minVersion == nil {
+		fmt.Println("No minVersion found")
+	}
 	var versionSlice []*semver.Version
 
 	var compareSlice [][]string

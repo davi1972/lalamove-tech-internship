@@ -15,7 +15,7 @@ import (
 // LatestVersions returns a sorted slice with the highest version as its first element and the highest version of the smaller minor versions in a descending order
 func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*semver.Version {
 	if releases == nil || minVersion == nil {
-		panic("invalid function parameters")
+		fmt.Println("invalid function parameters")
 	}
 
 	var versionSlice []*semver.Version
@@ -79,6 +79,7 @@ func LatestVersions(releases []*semver.Version, minVersion *semver.Version) []*s
 	return versionSlice
 }
 
+// Just a simple parse file function
 func parseFile(args string) [][]string {
 	data, err := ioutil.ReadFile(args)
 	if err != nil {
@@ -112,7 +113,7 @@ func main() {
 		repo := strings.Split(command[0], "/")
 		releases, _, err := client.Repositories.ListReleases(ctx, repo[0], repo[1], opt)
 		if err != nil {
-			panic(err) // is this really a good way?
+			fmt.Println(err)
 		}
 		minVersion := semver.New(command[1])
 		allReleases := make([]*semver.Version, len(releases))
